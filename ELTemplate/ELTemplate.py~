@@ -3,6 +3,11 @@ import unittest
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 import logging
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__),'..','pyserial-2.7'))
+import serial
+import time
 
 #
 # ELTemplate
@@ -42,7 +47,26 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
     ScriptedLoadableModuleWidget.setup(self)
 
     # Instantiate and connect widgets ...
-
+    ####################
+    # For debugging
+    #
+    # Reload and Test area
+    reloadCollapsibleButton = ctk.ctkCollapsibleButton()
+    reloadCollapsibleButton.text = "Reload && Test"
+    self.layout.addWidget(reloadCollapsibleButton)
+    reloadFormLayout = qt.QFormLayout(reloadCollapsibleButton)
+    
+    # reload button
+    # (use this during development, but remove it when delivering
+    #  your module to users)
+    self.reloadButton = qt.QPushButton("Reload")
+    self.reloadButton.toolTip = "Reload this module."
+    self.reloadButton.name = "CurveMaker Reload"
+    reloadFormLayout.addWidget(self.reloadButton)
+    self.reloadButton.connect('clicked()', self.onReload)
+    #
+    ####################
+    
     #
     # Parameters Area
     #
@@ -107,7 +131,7 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
     #
     self.applyButton = qt.QPushButton("Apply")
     self.applyButton.toolTip = "Run the algorithm."
-    self.applyButton.enabled = False
+    self.applyButton.enabled = True
     parametersFormLayout.addRow(self.applyButton)
 
     # connections
@@ -128,11 +152,51 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
     self.applyButton.enabled = self.inputSelector.currentNode() and self.outputSelector.currentNode()
 
   def onApplyButton(self):
-    logic = ELTemplateLogic()
-    enableScreenshotsFlag = self.enableScreenshotsFlagCheckBox.checked
-    imageThreshold = self.imageThresholdSliderWidget.value
-    logic.run(self.inputSelector.currentNode(), self.outputSelector.currentNode(), imageThreshold, enableScreenshotsFlag)
+    #logic = ELTemplateLogic()
+    #enableScreenshotsFlag = self.enableScreenshotsFlagCheckBox.checked
+    #imageThreshold = self.imageThresholdSliderWidget.value
+    #logic.run(self.inputSelector.currentNode(), self.outputSelector.currentNode(), imageThreshold, enableScreenshotsFlag)
+    self.sendToArduiono(self.fakeTarget())
 
+  def fakeTarget():
+    row = random.choice('ABCDEFGHIKLMN')
+    colunm = random.randint(-7,7)
+    rowstring = str(row)
+    columnstring = str(colunm)
+    return rowstring + ", " + columnstring
+
+  def sendToArduino(target):
+    # The following line is for serial over GPIO
+    f = open('/Users/anke/Desktop/port.txt', 'r')
+    port = f.readline()
+    #port = '/dev/cu.usbmodem14311'  # note I'm using Mac OS-X
+
+    ard = serial.Serial(port, 9600, timeout=5)
+    time.sleep(2)  # wait for Arduino
+
+    i = 0
+
+   #while (i < 4):
+    # Serial write section
+
+    ard.flush()
+    # setTemp1 = str(rowstring + ", " + columnstring + "X")
+    print ("Python value sent: ")
+    print (target + "X")
+    ard.write(target + "X")
+    time.sleep(1)  # I shortened this to match the new value in your Arduino code
+
+    # Serial read section
+    msg = ard.read(ard.inWaiting())  # read all characters in buffer
+    print ("Message from Arduino: ")
+    print (msg)
+    i = i + 1
+    #else:
+    print ("Exiting")
+    exit()
+
+
+    
 #
 # ELTemplateLogic
 #
@@ -210,6 +274,8 @@ class ELTemplateLogic(ScriptedLoadableModuleLogic):
 
     annotationLogic = slicer.modules.annotations.logic()
     annotationLogic.CreateSnapShot(name, description, type, 1, imageData)
+
+
 
   def run(self, inputVolume, outputVolume, imageThreshold, enableScreenshots=0):
     """

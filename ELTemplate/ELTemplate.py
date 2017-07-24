@@ -8,6 +8,7 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__),'..','pyserial-2.7'))
 import serial
 import time
+import random
 
 #
 # ELTemplate
@@ -149,23 +150,24 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
     pass
 
   def onSelect(self):
-    self.applyButton.enabled = self.inputSelector.currentNode() and self.outputSelector.currentNode()
+    #self.applyButton.enabled = self.inputSelector.currentNode() and self.outputSelector.currentNode()
+    pass
 
   def onApplyButton(self):
     #logic = ELTemplateLogic()
     #enableScreenshotsFlag = self.enableScreenshotsFlagCheckBox.checked
     #imageThreshold = self.imageThresholdSliderWidget.value
     #logic.run(self.inputSelector.currentNode(), self.outputSelector.currentNode(), imageThreshold, enableScreenshotsFlag)
-    self.sendToArduiono(self.fakeTarget())
+    self.sendToArduino(self.fakeTarget())
 
-  def fakeTarget():
+  def fakeTarget(self):
     row = random.choice('ABCDEFGHIKLMN')
     colunm = random.randint(-7,7)
     rowstring = str(row)
     columnstring = str(colunm)
     return rowstring + ", " + columnstring
 
-  def sendToArduino(target):
+  def sendToArduino(self, target):
     # The following line is for serial over GPIO
     f = open('/Users/anke/Desktop/port.txt', 'r')
     port = f.readline()
@@ -192,9 +194,8 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
     print (msg)
     i = i + 1
     #else:
-    print ("Exiting")
-    exit()
-
+    #print ("Exiting")
+    #exit()
 
     
 #
