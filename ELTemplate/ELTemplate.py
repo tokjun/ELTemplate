@@ -10,6 +10,8 @@ import serial
 import time
 import random
 
+from SliceTrackerUtils.session import SliceTrackerSession
+
 #
 # ELTemplate
 #
@@ -146,9 +148,51 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
     # Refresh Apply button state
     self.onSelect()
 
+
+    self.session = SliceTrackerSession()
+
+    self.session.addEventObserver(self.session.TargetSelectionEvent, self.onTargetSelectionChanged)
+    
+
   def cleanup(self):
+    self.session.removeEventObserver(self.session.TargetSelectionEvent, self.onTargetSelectionChanged)
     pass
 
+  @vtk.calldata_type(vtk.VTK_STRING)
+  def onTargetSelectionChanged(self, caller, event, callData):
+    
+    info = ast.literal_eval(callData)
+    if not info['nodeId'] or info['index'] == -1:
+      # hide guidance
+      return
+
+    hole = info['hole'].replace("(", "").replace(")", "")
+
+    #port = self.getSetting("Arduino_Port")
+    f = open('/Users/anke/Desktop/port.txt', 'r')
+    port = f.readline()
+
+    try:
+      ard = serial.Serial(port, 9600, timeout=5)
+
+      ard.flush()
+      # setTemp1 = str(rowstring + ", " + columnstring + "X")
+      print ("Python value sent: ")
+      print (hole + "X")
+      ard.write(hole + "X")
+      time.sleep(3)  # I shortened this to match the new value in your Arduino code
+
+      # Serial read section
+      msg = ard.read(ard.inWaiting())  # read all characters in buffer
+      print ("Message from Arduino: ")
+      print (msg)
+      print ("Exiting")
+    except OSError:
+      logging.debug("No Arduino connection available. Check port")
+    
+
+
+  
   def onSelect(self):
     #self.applyButton.enabled = self.inputSelector.currentNode() and self.outputSelector.currentNode()
     pass
