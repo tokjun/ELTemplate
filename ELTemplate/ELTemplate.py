@@ -187,13 +187,14 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
 
     try:
       ard = serial.Serial(port, 9600, timeout=5)
+      time.sleep(1)  # wait for Arduino
 
       ard.flush()
       # setTemp1 = str(rowstring + ", " + columnstring + "X")
       print ("Python value sent: ")
       print (hole + "X")
       ard.write(hole + "X")
-      time.sleep(3)  # I shortened this to match the new value in your Arduino code
+      time.sleep(1)  # I shortened this to match the new value in your Arduino code
 
       # Serial read section
       msg = ard.read(ard.inWaiting())  # read all characters in buffer
