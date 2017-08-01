@@ -9,6 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__),'..','pyserial-2.7'))
 import serial
 import time
 import random
+import ast
 
 from SliceTrackerUtils.session import SliceTrackerSession
 
@@ -129,6 +130,12 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
     self.enableScreenshotsFlagCheckBox.setToolTip("If checked, take screen shots for tutorials. Use Save Data to write them to disk.")
     parametersFormLayout.addRow("Enable Screenshots", self.enableScreenshotsFlagCheckBox)
 
+    # Textbox
+    #self.portinput = qt.QFormLayout()
+    self.portinput = qt.QLineEdit("/dev/cu.usbmodem14311")
+    parametersFormLayout.addRow("Port:", self.portinput)
+    # -> on change new port ?
+
     #
     # Apply Button
     #
@@ -152,7 +159,10 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
     self.session = SliceTrackerSession()
 
     self.session.addEventObserver(self.session.TargetSelectionEvent, self.onTargetSelectionChanged)
-    
+
+
+
+
 
   def cleanup(self):
     self.session.removeEventObserver(self.session.TargetSelectionEvent, self.onTargetSelectionChanged)
@@ -160,17 +170,20 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
 
   @vtk.calldata_type(vtk.VTK_STRING)
   def onTargetSelectionChanged(self, caller, event, callData):
-    
+    print("onChange")
     info = ast.literal_eval(callData)
     if not info['nodeId'] or info['index'] == -1:
       # hide guidance
+      print("failed")
       return
 
     hole = info['hole'].replace("(", "").replace(")", "")
+    print(hole)
 
     #port = self.getSetting("Arduino_Port")
-    f = open('/Users/anke/Desktop/port.txt', 'r')
-    port = f.readline()
+    #f = open('/Users/anke/Desktop/port.txt', 'r')
+    port = self.portinput.text
+    print(port)
 
     try:
       ard = serial.Serial(port, 9600, timeout=5)
@@ -213,8 +226,10 @@ class ELTemplateWidget(ScriptedLoadableModuleWidget):
 
   def sendToArduino(self, target):
     # The following line is for serial over GPIO
-    f = open('/Users/anke/Desktop/port.txt', 'r')
-    port = f.readline()
+    #f = open('/Users/anke/Desktop/port.txt', 'r')
+    #port = f.readline()
+    port = self.portinput.text
+    print (port)
     #port = '/dev/cu.usbmodem14311'  # note I'm using Mac OS-X
 
     ard = serial.Serial(port, 9600, timeout=5)
